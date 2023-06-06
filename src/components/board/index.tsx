@@ -1,6 +1,6 @@
 import { useState, memo, useRef, MouseEvent, useEffect } from "react";
 
-import Square from "../sqare";
+import Panel from "../panel";
 import styles from "./index.module.css";
 import handlers from "./handlers";
 
@@ -132,24 +132,7 @@ const Board = () => {
             </button>
           ))}
       </div>
-      <div
-        className={styles.board}
-        style={{
-          gridTemplateColumns: `repeat(${column}, 1fr)`,
-          gridTemplateRows: `repeat(${row}, 1fr)`,
-        }}
-      >
-        {data.map((line, rowIndex) => {
-          return line.map((item, columnIndex) => (
-            <Square
-              content={item}
-              index={rowIndex * line.length + columnIndex}
-              key={`${rowIndex * line.length + columnIndex}`}
-              handleClick={handleClick}
-            />
-          ));
-        })}
-      </div>
+      <Panel data={data} row={row} column={column} handleClick={handleClick} />
     </div>
   );
 };

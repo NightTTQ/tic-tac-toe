@@ -1,4 +1,4 @@
-import { useState, memo, MouseEvent } from "react";
+import { memo, MouseEvent } from "react";
 
 import styles from "./index.module.css";
 

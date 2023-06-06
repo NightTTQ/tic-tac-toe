@@ -1,9 +1,3 @@
-.board {
-  display: grid;
-
-  background-color: gray;
-}
-
 .wrapper {
   display: flex;
   flex-direction: column;
