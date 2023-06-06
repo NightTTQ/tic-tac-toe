@@ -133,17 +133,28 @@ const Board = () => {
         </div>
         <button onClick={init}>开始</button>
       </div>
-      <div className={styles.infoWrapper}>
-        {chess && !winner && <p>执棋者：{chess}</p>}
-        {winner && <p>胜利者：{winner}</p>}
-        {history.length > 0 &&
-          history.map((item, index) => (
-            <button onClick={(e) => goback(e, index)} key={index}>
-              {index === 0 ? "悔棋至开局" : `悔棋至第${index}步`}
-            </button>
-          ))}
+      <div className={styles.playgroundWrapper}>
+        <div className={styles.infoWrapper}>
+          <div className={styles.textArea}>
+            {chess && !winner && <p>执棋者：{chess}</p>}
+            {winner && <p>胜利者：{winner}</p>}
+          </div>
+          <div className={styles.backoffList}>
+            {history.length > 0 &&
+              history.map((item, index) => (
+                <button onClick={(e) => goback(e, index)} key={index}>
+                  {index === 0 ? "悔棋至开局" : `悔棋至第${index}步`}
+                </button>
+              ))}
+          </div>
+        </div>
+        <Panel
+          data={data}
+          row={row}
+          column={column}
+          handleClick={handleClick}
+        />
       </div>
-      <Panel data={data} row={row} column={column} handleClick={handleClick} />
     </div>
   );
 };
