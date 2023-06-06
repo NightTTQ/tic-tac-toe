@@ -2,6 +2,7 @@ import { useState, memo, useRef, MouseEvent, useEffect } from "react";
 
 import Square from "../sqare";
 import styles from "./index.module.css";
+import handlers from "./handlers";
 
 const Board = () => {
   // console.log("board");
@@ -20,175 +21,6 @@ const Board = () => {
   const columnRef = useRef<HTMLInputElement>(null);
   const modeRef = useRef<HTMLSelectElement>(null);
 
-  const handlers = [
-    {
-      // 三连子
-      name: "tictactoe",
-      handler: (data: string[][], newRow?: number, newCol?: number) => {
-        if (newRow !== undefined && newCol !== undefined) {
-          // 下棋
-          const newChess = data[newRow][newCol];
-          let isWin = false;
-          // 判断行
-          if (!isWin) {
-            let x = newCol + 1;
-            let y = newRow;
-
-            let count = 1;
-            // 向右统计
-            while (x < column && data[y][x] === newChess) {
-              x++;
-              count++;
-              if (count >= 3) {
-                isWin = true;
-                break;
-              }
-            }
-            // 向左统计
-            if (!isWin) {
-              x = newCol - 1;
-              while (x >= 0 && data[y][x] === newChess) {
-                x--;
-                count++;
-                if (count >= 3) {
-                  isWin = true;
-                  break;
-                }
-              }
-            }
-          }
-          // 判断列
-          if (!isWin) {
-            let x = newCol;
-            let y = newRow + 1;
-
-            let count = 1;
-            // 向下统计
-            while (y < row && data[y][x] === newChess) {
-              y++;
-              count++;
-              if (count >= 3) {
-                isWin = true;
-                break;
-              }
-            }
-            // 向上统计
-            if (!isWin) {
-              y = newRow - 1;
-              while (y >= 0 && data[y][x] === newChess) {
-                y--;
-                count++;
-                if (count >= 3) {
-                  isWin = true;
-                  break;
-                }
-              }
-            }
-          }
-          // 判断斜线
-          if (!isWin) {
-            let x = newCol + 1;
-            let y = newRow + 1;
-
-            let count = 1;
-            // 向右下统计
-            while (x < column && y < row && data[y][x] === newChess) {
-              x++;
-              y++;
-              count++;
-              if (count >= 3) {
-                isWin = true;
-                break;
-              }
-            }
-            // 向左上统计
-            if (!isWin) {
-              x = newCol - 1;
-              y = newRow - 1;
-              while (x >= 0 && y >= 0 && data[y][x] === newChess) {
-                x--;
-                y--;
-                count++;
-                if (count >= 3) {
-                  isWin = true;
-                  break;
-                }
-              }
-            }
-            // 向左下统计
-            if (!isWin) {
-              x = newCol - 1;
-              y = newRow + 1;
-              while (x >= 0 && y < row && data[y][x] === newChess) {
-                x--;
-                y++;
-                count++;
-                if (count >= 3) {
-                  isWin = true;
-                  break;
-                }
-              }
-            }
-            // 向右上统计
-            if (!isWin) {
-              x = newCol + 1;
-              y = newRow - 1;
-              while (x < column && y >= 0 && data[y][x] === newChess) {
-                x++;
-                y--;
-                count++;
-                if (count >= 3) {
-                  isWin = true;
-                  break;
-                }
-              }
-            }
-          }
-          // 判断平局
-          if (!isWin) {
-            let isFull = true;
-            for (let i = 0; i < row; i++) {
-              for (let j = 0; j < column; j++) {
-                if (data[i][j] === "") {
-                  isFull = false;
-                  break;
-                }
-                if (!isFull) break;
-              }
-            }
-            if (isFull) {
-              setWinner("平局");
-            }
-          }
-          // 更新棋盘
-          setData(data);
-          // 判断胜者
-          if (isWin) {
-            setWinner(newChess);
-          } else {
-            // 更新下一颗棋子
-            if (chess === "X") {
-              setChess("O");
-            } else if (chess === "O") {
-              setChess("X");
-            }
-          }
-        }
-      },
-      init: () => {
-        setChess("X");
-
-        // setHistory((prev) => [...prev, data]);
-      },
-    },
-    {
-      // 五子棋
-      name: "gomoku",
-      handler: (data: string[][], newRow?: number, newCol?: number) => {},
-      init: () => {},
-    },
-  ];
-
   useEffect(() => {
     if (isRolling) {
       // 悔棋不更新历史记录
@@ -205,15 +37,14 @@ const Board = () => {
   const init = () => {
     const column = Number(columnRef.current?.value);
     const row = Number(rowRef.current?.value);
-    setMode(Number(modeRef.current?.value));
+    const mode = Number(modeRef.current?.value);
+    setMode(mode);
     setColumn(column);
     setRow(row);
     setWinner(undefined);
-    setHistory([]);
-    setChess("");
     setData(Array(row).fill(Array(column).fill("")));
     setStep(0);
-    handlers[mode].init();
+    handlers[mode].init(setChess);
   };
   /**
    * @desc 处理点击事件
@@ -233,7 +64,17 @@ const Board = () => {
         return item;
       })
     );
-    handlers[mode].handler(newData, newRow, newCol);
+    handlers[mode].handler(
+      newData,
+      newRow,
+      newCol,
+      column,
+      row,
+      chess,
+      setData,
+      setWinner,
+      setChess
+    );
   };
   /**
    * @desc 悔棋
@@ -281,7 +122,7 @@ const Board = () => {
         </div>
         <button onClick={init}>开始</button>
       </div>
-      <div>
+      <div className={styles.infoWrapper}>
         {chess && !winner && <p>执棋者：{chess}</p>}
         {winner && <p>胜利者：{winner}</p>}
         {history.length > 0 &&
