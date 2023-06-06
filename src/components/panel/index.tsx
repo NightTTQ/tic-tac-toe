@@ -1,4 +1,4 @@
-import { MouseEvent } from "react";
+import { MouseEvent, memo } from "react";
 
 import Square from "../sqare";
 import styles from "./index.module.css";
@@ -33,4 +33,11 @@ const Panel = (props: Props) => {
   );
 };
 
-export default Panel;
+export default memo(Panel, (prevProps, nextProps) => {
+  return (
+    prevProps.data.toString() === nextProps.data.toString() &&
+    prevProps.column === nextProps.column &&
+    prevProps.row === nextProps.row &&
+    prevProps.handleClick === nextProps.handleClick
+  );
+});

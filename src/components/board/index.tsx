@@ -1,11 +1,10 @@
-import { useState, memo, useRef, MouseEvent, useEffect } from "react";
+import { useState, useRef, MouseEvent, useEffect } from "react";
 
 import Panel from "../panel";
 import styles from "./index.module.css";
 import handlers from "./handlers";
 
 const Board = () => {
-  // console.log("board");
   const [column, setColumn] = useState(3);
   const [row, setRow] = useState(3);
   const [data, setData] = useState<string[][]>([]);
@@ -159,4 +158,4 @@ const Board = () => {
   );
 };
 
-export default memo(Board);
+export default Board;

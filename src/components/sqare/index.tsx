@@ -9,8 +9,6 @@ type Props = {
 };
 
 const Square = (props: Props) => {
-  // console.log("square");
-
   return (
     <div
       className={styles.sqare}
@@ -21,4 +19,10 @@ const Square = (props: Props) => {
   );
 };
 
-export default memo(Square);
+export default memo(Square, (prevProps, nextProps) => {
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.index === nextProps.index &&
+    prevProps.handleClick === nextProps.handleClick
+  );
+});
