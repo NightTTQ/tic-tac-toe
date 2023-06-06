@@ -38,6 +38,17 @@ const Board = () => {
     const column = Number(columnRef.current?.value);
     const row = Number(rowRef.current?.value);
     const mode = Number(modeRef.current?.value);
+    if (
+      isNaN(column) ||
+      isNaN(row) ||
+      column <= 0 ||
+      row <= 0 ||
+      isNaN(mode) ||
+      !handlers[mode]
+    ) {
+      alert("游戏配置错误");
+      return;
+    }
     setMode(mode);
     setColumn(column);
     setRow(row);
