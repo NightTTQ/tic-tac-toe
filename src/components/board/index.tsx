@@ -13,7 +13,7 @@ const Board = () => {
     const [data, setData] = useState<string[][]>([]);
     const [mode, setMode] = useState(0);
     const [winner, setWinner] = useState<string>();
-    const [history, setHistory] = useState<{ data: string[][], chess: string }[]>([]);
+    const [history, setHistory] = useState<{ data: string[][], chess: string, winner?:string }[]>([]);
     const [chess, setChess] = useState<string>('');
     const [step, setStep] = useState(0);
     const [isRolling, setIsRolling] = useState(false);
@@ -27,7 +27,7 @@ const Board = () => {
             setIsRolling(false);
         } else if (data.length > 0) {
             // 下棋更新历史记录
-            setHistory((prev) => [...prev.slice(0, step), { data, chess }]);
+            setHistory((prev) => [...prev.slice(0, step), { data, chess, winner }]);
             setStep((prev) => prev + 1);
         }
     }, [data]);
@@ -91,10 +91,10 @@ const Board = () => {
    */
     const goback = (event: MouseEvent<HTMLButtonElement>, index: number) => {
         setIsRolling(true);
-        if (winner) setWinner(undefined);
         setStep(index + 1);
         setData(history[index].data);
         setChess(history[index].chess);
+        setWinner(history[index].winner);
     };
 
     return (
