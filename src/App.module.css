@@ -4,3 +4,19 @@
   min-height: 100vh;
   margin: auto;
 }
+
+.nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  height: 10%;
+  background-color: #282c34;
+  color: white;
+  font-size: calc(10px + 2vmin);
+}
+
+.nav > .active {
+  color: white;
+}

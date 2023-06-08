@@ -1,5 +1,6 @@
+import { Outlet, NavLink } from 'react-router-dom';
+
 import styles from './App.module.css';
-import Board from './components/board';
 
 /**
  * @desc App
@@ -7,7 +8,21 @@ import Board from './components/board';
 function App () {
     return (
         <div className={styles.app}>
-            <Board />
+            <nav className={styles.nav}>
+                <NavLink
+                    to={'/'}
+                    className={({ isActive }) => (isActive ? styles.active : '')}
+                >
+          Home
+                </NavLink>
+                <NavLink
+                    to={'/tictactoe'}
+                    className={({ isActive }) => (isActive ? styles.active : '')}
+                >
+          TicTacToe
+                </NavLink>
+            </nav>
+            <Outlet />
         </div>
     );
 }
