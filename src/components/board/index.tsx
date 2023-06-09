@@ -1,4 +1,4 @@
-import { useState, useRef, MouseEvent, useEffect } from 'react';
+import { useState, useRef, useEffect, MouseEvent } from 'react';
 
 import Panel from '../panel';
 import styles from './index.module.css';
@@ -8,63 +8,63 @@ import handlers from './handlers';
  * @desc 游戏模块
  */
 const Board = () => {
+    console.log('Board render');
     const [column, setColumn] = useState(3);
     const [row, setRow] = useState(3);
-    const [data, setData] = useState<string[][]>([]);
     const [mode, setMode] = useState(0);
     const [winner, setWinner] = useState<string>();
-    const [history, setHistory] = useState<{ data: string[][], chess: string, winner?:string }[]>([]);
+    // 记录游戏状态，后续改为redux
+    const [state, setState] = useState<
+        { data: string[][]; nextChess: string; curRow?: number; curCol?: number; winner?: string }[]
+    >([]);
     const [chess, setChess] = useState<string>('');
-    const [step, setStep] = useState(0);
-    const [isRolling, setIsRolling] = useState(false);
+    // 去不掉的原因是，在history中添加一个flag来表明这一项是需要展示的状态，要将这个状态传给panel就必须遍历history，步数多一点就会有性能问题
+    const [curStep, setCurStep] = useState(0);
+    const handleClickRef = useRef<(newRow: number, newCol: number) => void>();
     const rowRef = useRef<HTMLInputElement>(null);
     const columnRef = useRef<HTMLInputElement>(null);
     const modeRef = useRef<HTMLSelectElement>(null);
 
-    useEffect(() => {
-        if (isRolling) {
-            // 悔棋不更新历史记录
-            setIsRolling(false);
-        } else if (data.length > 0) {
-            // 下棋更新历史记录
-            setHistory((prev) => [...prev.slice(0, step), { data, chess, winner }]);
-            setStep((prev) => prev + 1);
-        }
-    }, [data]);
     /**
-   * @desc 初始化游戏
-   */
+     * @desc 初始化游戏
+     */
     const init = () => {
         const column = Number(columnRef.current?.value);
         const row = Number(rowRef.current?.value);
-        const mode = Number(modeRef.current?.value);
-        if (
-            isNaN(column) ||
-      isNaN(row) ||
-      column <= 0 ||
-      row <= 0 ||
-      isNaN(mode) ||
-      !handlers[mode]
-        ) {
+        const modeIndex = Number(modeRef.current?.value);
+        if (isNaN(column) || isNaN(row) || column <= 0 || row <= 0 || !handlers[modeIndex]) {
             alert('游戏配置错误');
             return;
         }
-        setMode(mode);
+        setMode(modeIndex);
         setColumn(column);
         setRow(row);
         setWinner(undefined);
-        setData(Array(row).fill(Array(column).fill('')));
-        setStep(0);
-        handlers[mode].init(setChess);
+        const data = new Array(row).fill(0).map(() => new Array(column).fill(''));
+        const { nextChess } = handlers[modeIndex].init();
+        setState([{ data, nextChess }]);
+        setCurStep(0);
+        setChess(nextChess);
     };
     /**
-   * @desc 处理点击事件
-   */
-    const handleClick = (event: MouseEvent<HTMLDivElement>, index: number) => {
+     * @desc 处理点击事件
+     * @param newRow 新棋子所在行
+     * @param newCol 新棋子所在列
+     */
+    const handleClick = (newRow: number, newCol: number) => {
+        console.log('此时state为');
+        console.log(state);
+        console.log('此时curStep为');
+        console.log(curStep);
+
+        const { data } = state[curStep];
+        console.log('Click此时的棋盘数据如下');
+        console.log(data);
+
         if (winner) return;
-        const newRow = Math.floor(index / column);
-        const newCol = index % column;
+        // 点击已经有棋的格子不处理
         if (data[newRow][newCol]) return;
+        // 先给棋盘赋值，再判断是否胜利
         const newData = data.map((line, rowIndex) =>
             line.map((item, columnIndex) => {
                 if (rowIndex === newRow) {
@@ -73,30 +73,45 @@ const Board = () => {
                     }
                 }
                 return item;
-            }));
-        handlers[mode].handler(
-            newData,
-            newRow,
-            newCol,
-            column,
-            row,
-            chess,
-            setData,
-            setWinner,
-            setChess
+            })
         );
-    };
-    /**
-   * @desc 悔棋
-   */
-    const goback = (event: MouseEvent<HTMLButtonElement>, index: number) => {
-        setIsRolling(true);
-        setStep(index + 1);
-        setData(history[index].data);
-        setChess(history[index].chess);
-        setWinner(history[index].winner);
+        // 由玩法处理棋盘数据并判断胜利和下颗棋子
+        const { nextChess, newWinner } = handlers[mode].handler(newData, newRow, newCol, column, row, chess, curStep);
+        // 可能是一步新棋，也可能是悔棋后的新棋
+        if (curStep === state.length - 1) {
+            // 新棋
+            setState((prev) => [
+                ...prev,
+                { data: newData, nextChess, curRow: newRow, curCol: newCol, winner: newWinner },
+            ]);
+        } else {
+            // 悔棋后的新棋
+            setState((prev) => [
+                ...prev.slice(0, curStep + 1),
+                { data: newData, nextChess, curRow: newRow, curCol: newCol, winner: newWinner },
+            ]);
+        }
+        console.log('Click处理后的棋盘数据如下');
+        console.log(newData);
+        setCurStep((prev) => prev + 1);
+        setChess(nextChess);
+        setWinner(newWinner);
     };
 
+    useEffect(() => {
+        console.log('Board useEffect');
+
+        handleClickRef.current = handleClick;
+    }, [handleClick]);
+
+    /**
+     * @desc 悔棋
+     */
+    const goback = (event: MouseEvent<HTMLButtonElement>, index: number) => {
+        setCurStep(index);
+        setChess(state[index].nextChess);
+        setWinner(state[index].winner);
+    };
     return (
         <div className={styles.wrapper}>
             <div className={styles.settingWrapper}>
@@ -122,9 +137,17 @@ const Board = () => {
                 </div>
                 <div>
                     <label htmlFor="mode">游戏模式</label>
-                    <select name="mode" id="mode" defaultValue={mode} ref={modeRef}>
+                    <select
+                        name="mode"
+                        id="mode"
+                        defaultValue={mode}
+                        ref={modeRef}
+                    >
                         {handlers.map((item, index) => (
-                            <option key={index} value={index}>
+                            <option
+                                key={index}
+                                value={index}
+                            >
                                 {item.name}
                             </option>
                         ))}
@@ -139,18 +162,22 @@ const Board = () => {
                         {winner && <p>胜利者：{winner}</p>}
                     </div>
                     <div className={styles.backoffList}>
-                        {history.length > 0 &&
-              history.map((item, index) => (
-                  <button onClick={(event) => goback(event, index)} key={index}>
-                      {index === 0 ? '悔棋至开局' : `悔棋至第${index}步`}
-                  </button>
-              ))}
+                        {state.length > 0 &&
+                            state.map((item, index) => (
+                                <button
+                                    onClick={(event) => goback(event, index)}
+                                    key={index}
+                                >
+                                    {index === 0 ? '悔棋至开局' : `悔棋至第${index}步`}
+                                </button>
+                            ))}
                     </div>
                 </div>
                 <Panel
-                    data={data}
+                    data={state[curStep]?.data || []}
                     row={row}
                     column={column}
+                    // handleClick={handleClickRef.current}
                     handleClick={handleClick}
                 />
             </div>

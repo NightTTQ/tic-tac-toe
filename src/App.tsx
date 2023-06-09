@@ -13,13 +13,13 @@ function App () {
                     to={'/'}
                     className={({ isActive }) => (isActive ? styles.active : '')}
                 >
-          Home
+                    Home
                 </NavLink>
                 <NavLink
                     to={'/tictactoe'}
                     className={({ isActive }) => (isActive ? styles.active : '')}
                 >
-          TicTacToe
+                    TicTacToe
                 </NavLink>
             </nav>
             <Outlet />
