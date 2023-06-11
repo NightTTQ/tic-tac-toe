@@ -1,7 +1,0 @@
-.panel {
-  display: grid;
-  width: fit-content;
-  height: fit-content;
-  user-select: none;
-  background-color: gray;
-}

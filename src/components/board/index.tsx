@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, MouseEvent } from 'react';
+import { useState, useRef, useEffect, MouseEvent, useCallback } from 'react';
 
-import Panel from '../panel';
+import Square from './square';
 import styles from './index.module.css';
 import handlers from './handlers';
 
@@ -8,18 +8,23 @@ import handlers from './handlers';
  * @desc 游戏模块
  */
 const Board = () => {
-    console.log('Board render');
     const [column, setColumn] = useState(3);
     const [row, setRow] = useState(3);
     const [mode, setMode] = useState(0);
     const [winner, setWinner] = useState<string>();
     // 记录游戏状态，后续改为redux
-    const [state, setState] = useState<
-        { data: string[][]; nextChess: string; curRow?: number; curCol?: number; winner?: string }[]
+    const stateRef = useRef<
+    {
+        data: string[][];
+        nextChess: string;
+        curRow?: number;
+        curCol?: number;
+        winner?: string;
+    }[]
     >([]);
-    const [chess, setChess] = useState<string>('');
     // 去不掉的原因是，在history中添加一个flag来表明这一项是需要展示的状态，要将这个状态传给panel就必须遍历history，步数多一点就会有性能问题
-    const [curStep, setCurStep] = useState(0);
+    const stepRef = useRef(0);
+    const [chess, setChess] = useState<string>('');
     const handleClickRef = useRef<(newRow: number, newCol: number) => void>();
     const rowRef = useRef<HTMLInputElement>(null);
     const columnRef = useRef<HTMLInputElement>(null);
@@ -32,7 +37,13 @@ const Board = () => {
         const column = Number(columnRef.current?.value);
         const row = Number(rowRef.current?.value);
         const modeIndex = Number(modeRef.current?.value);
-        if (isNaN(column) || isNaN(row) || column <= 0 || row <= 0 || !handlers[modeIndex]) {
+        if (
+            isNaN(column) ||
+            isNaN(row) ||
+            column <= 0 ||
+            row <= 0 ||
+            !handlers[modeIndex]
+        ) {
             alert('游戏配置错误');
             return;
         }
@@ -40,10 +51,12 @@ const Board = () => {
         setColumn(column);
         setRow(row);
         setWinner(undefined);
-        const data = new Array(row).fill(0).map(() => new Array(column).fill(''));
+        const data = new Array(row)
+            .fill(0)
+            .map(() => new Array(column).fill(''));
         const { nextChess } = handlers[modeIndex].init();
-        setState([{ data, nextChess }]);
-        setCurStep(0);
+        stateRef.current = [{ data, nextChess }];
+        stepRef.current = 0;
         setChess(nextChess);
     };
     /**
@@ -52,15 +65,7 @@ const Board = () => {
      * @param newCol 新棋子所在列
      */
     const handleClick = (newRow: number, newCol: number) => {
-        console.log('此时state为');
-        console.log(state);
-        console.log('此时curStep为');
-        console.log(curStep);
-
-        const { data } = state[curStep];
-        console.log('Click此时的棋盘数据如下');
-        console.log(data);
-
+        const { data } = stateRef.current[stepRef.current];
         if (winner) return;
         // 点击已经有棋的格子不处理
         if (data[newRow][newCol]) return;
@@ -73,44 +78,63 @@ const Board = () => {
                     }
                 }
                 return item;
-            })
-        );
+            }));
         // 由玩法处理棋盘数据并判断胜利和下颗棋子
-        const { nextChess, newWinner } = handlers[mode].handler(newData, newRow, newCol, column, row, chess, curStep);
+        const { nextChess, newWinner } = handlers[mode].handler(
+            newData,
+            newRow,
+            newCol,
+            column,
+            row,
+            chess,
+            stepRef.current
+        );
         // 可能是一步新棋，也可能是悔棋后的新棋
-        if (curStep === state.length - 1) {
+        if (stepRef.current === stateRef.current.length - 1) {
             // 新棋
-            setState((prev) => [
-                ...prev,
-                { data: newData, nextChess, curRow: newRow, curCol: newCol, winner: newWinner },
-            ]);
+            stateRef.current.push({
+                data: newData,
+                nextChess,
+                curRow: newRow,
+                curCol: newCol,
+                winner: newWinner,
+            });
         } else {
             // 悔棋后的新棋
-            setState((prev) => [
-                ...prev.slice(0, curStep + 1),
-                { data: newData, nextChess, curRow: newRow, curCol: newCol, winner: newWinner },
-            ]);
+            stateRef.current = [
+                ...stateRef.current.slice(0, stepRef.current + 1),
+                {
+                    data: newData,
+                    nextChess,
+                    curRow: newRow,
+                    curCol: newCol,
+                    winner: newWinner,
+                },
+            ];
         }
-        console.log('Click处理后的棋盘数据如下');
-        console.log(newData);
-        setCurStep((prev) => prev + 1);
+        stepRef.current++;
         setChess(nextChess);
         setWinner(newWinner);
     };
 
     useEffect(() => {
-        console.log('Board useEffect');
-
         handleClickRef.current = handleClick;
     }, [handleClick]);
+
+    const onClick = useCallback(
+        (event: MouseEvent<HTMLDivElement>, row: number, col: number) => {
+            handleClickRef.current?.(row, col);
+        },
+        []
+    );
 
     /**
      * @desc 悔棋
      */
     const goback = (event: MouseEvent<HTMLButtonElement>, index: number) => {
-        setCurStep(index);
-        setChess(state[index].nextChess);
-        setWinner(state[index].winner);
+        stepRef.current = index;
+        setChess(stateRef.current[index].nextChess);
+        setWinner(stateRef.current[index].winner);
     };
     return (
         <div className={styles.wrapper}>
@@ -144,10 +168,7 @@ const Board = () => {
                         ref={modeRef}
                     >
                         {handlers.map((item, index) => (
-                            <option
-                                key={index}
-                                value={index}
-                            >
+                            <option key={index} value={index}>
                                 {item.name}
                             </option>
                         ))}
@@ -162,24 +183,38 @@ const Board = () => {
                         {winner && <p>胜利者：{winner}</p>}
                     </div>
                     <div className={styles.backoffList}>
-                        {state.length > 0 &&
-                            state.map((item, index) => (
+                        {stateRef.current?.length > 0 &&
+                            stateRef.current.map((item, index) => (
                                 <button
                                     onClick={(event) => goback(event, index)}
                                     key={index}
                                 >
-                                    {index === 0 ? '悔棋至开局' : `悔棋至第${index}步`}
+                                    {index === 0
+                                        ? '悔棋至开局'
+                                        : `悔棋至第${index}步`}
                                 </button>
                             ))}
                     </div>
                 </div>
-                <Panel
-                    data={state[curStep]?.data || []}
-                    row={row}
-                    column={column}
-                    // handleClick={handleClickRef.current}
-                    handleClick={handleClick}
-                />
+                <div
+                    className={styles.panel}
+                    style={{
+                        gridTemplateColumns: `repeat(${column}, 1fr)`,
+                        gridTemplateRows: `repeat(${row}, 1fr)`,
+                    }}
+                >
+                    {stateRef.current[stepRef.current] &&
+                        stateRef.current[stepRef.current].data.map((line, rowIndex) =>
+                            line.map((item, columnIndex) => (
+                                <Square
+                                    key={columnIndex}
+                                    row={rowIndex}
+                                    column={columnIndex}
+                                    content={item}
+                                    onClick={onClick}
+                                />
+                            )))}
+                </div>
             </div>
         </div>
     );

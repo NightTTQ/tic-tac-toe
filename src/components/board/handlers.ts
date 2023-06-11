@@ -8,7 +8,7 @@ const handlers: {
         row: number,
         chess: string,
         setp: number
-    ) => { nextChess: string; newWinner?: string };
+    ) => { nextChess: string, newWinner?: string };
     init: () => { nextChess: string };
 }[] = [
     {
