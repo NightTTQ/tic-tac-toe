@@ -1,4 +1,4 @@
-import { memo, MouseEvent } from 'react';
+import { PureComponent, MouseEvent } from 'react';
 
 import styles from './index.module.css';
 
@@ -16,20 +16,30 @@ type Props = {
 /**
  * @desc 棋盘格子
  */
-const Square = (props: Props) => {
-    return (
-        <div
-            className={styles.sqare}
-            onClick={(event) => {
-                event.stopPropagation();
-                event.preventDefault();
-                event.target = event.currentTarget;
-                props.onClick(event, props.row, props.column);
-            }}
-        >
-            <div className={styles.text}>{props.content}</div>
-        </div>
-    );
-};
+class Square extends PureComponent<Props> {
+    constructor (props: Props) {
+        super(props);
+    }
 
-export default memo(Square);
+    handleClick = (event: MouseEvent<HTMLDivElement>) => {
+        event.stopPropagation();
+        event.preventDefault();
+        event.target = event.currentTarget;
+        this.props.onClick(event, this.props.row, this.props.column);
+    };
+
+    render () {
+        const { content } = this.props;
+
+        return (
+            <div
+                className={styles.sqare}
+                onClick={this.handleClick}
+            >
+                <div className={styles.text}>{content}</div>
+            </div>
+        );
+    }
+}
+
+export default Square;

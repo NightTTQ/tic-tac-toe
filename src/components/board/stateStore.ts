@@ -1,25 +1,45 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+import { Props } from './index';
+
 export type GameState = {
     data: string[][];
     nextChess: string;
     curRow?: number;
     curCol?: number;
     winner?: string;
-}[];
-
-const initialState: { value: GameState } = { value: [] };
+};
 
 export const gameState = createSlice({
     name: 'gameState',
-    initialState,
+    initialState: { value: [] as GameState[] },
     reducers: {
-        updateGameState: (state, action: PayloadAction<GameState>) => {
+        updateGameState: (state, action: PayloadAction<GameState[]>) => {
             state.value = action.payload;
         },
     },
 });
 
-export const { updateGameState } = gameState.actions;
+/**
+ * @desc 更新游戏状态
+ */
+export const updateGameState = (gameState: GameState[]) => ({
+    type: 'gameState/updateGameState',
+    payload: gameState,
+});
+
+/**
+ * @desc 获取游戏状态
+ */
+export const mapState = (
+    state: { gameState: { value: GameState[] } },
+    ownProps: Props
+) => {
+    return {
+        ...ownProps,
+        gameState: state.gameState.value,
+    };
+};
+export const mapDispatch = { updateGameState };
 
 export default gameState.reducer;
