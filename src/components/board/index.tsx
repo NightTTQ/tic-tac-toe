@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, MouseEvent, useCallback } from 'react';
+import { useAppSelector, useAppDispatch } from '@/hooks';
 
+import { updateGameState } from './stateStore';
 import Square from './square';
 import styles from './index.module.css';
 import handlers from './handlers';
@@ -12,17 +14,10 @@ const Board = () => {
     const [row, setRow] = useState(3);
     const [mode, setMode] = useState(0);
     const [winner, setWinner] = useState<string>();
-    // 记录游戏状态，后续改为redux
-    const stateRef = useRef<
-    {
-        data: string[][];
-        nextChess: string;
-        curRow?: number;
-        curCol?: number;
-        winner?: string;
-    }[]
-    >([]);
-    // 去不掉的原因是，在history中添加一个flag来表明这一项是需要展示的状态，要将这个状态传给panel就必须遍历history，步数多一点就会有性能问题
+    // 记录游戏状态
+    const state = useAppSelector((state) => state.gameState);
+    const dispatch = useAppDispatch();
+    // 可以在state中添加一个flag来表明此项是现在需要展示的项，但要找到对应的状态就必须遍历所有state，步数多一点就会有性能问题
     const stepRef = useRef(0);
     const [chess, setChess] = useState<string>('');
     const handleClickRef = useRef<(newRow: number, newCol: number) => void>();
@@ -55,7 +50,7 @@ const Board = () => {
             .fill(0)
             .map(() => new Array(column).fill(''));
         const { nextChess } = handlers[modeIndex].init();
-        stateRef.current = [{ data, nextChess }];
+        dispatch(updateGameState([{ data, nextChess }]));
         stepRef.current = 0;
         setChess(nextChess);
     };
@@ -65,7 +60,7 @@ const Board = () => {
      * @param newCol 新棋子所在列
      */
     const handleClick = (newRow: number, newCol: number) => {
-        const { data } = stateRef.current[stepRef.current];
+        const { data } = state.value[stepRef.current];
         if (winner) return;
         // 点击已经有棋的格子不处理
         if (data[newRow][newCol]) return;
@@ -90,19 +85,19 @@ const Board = () => {
             stepRef.current
         );
         // 可能是一步新棋，也可能是悔棋后的新棋
-        if (stepRef.current === stateRef.current.length - 1) {
+        if (stepRef.current === state.value.length - 1) {
             // 新棋
-            stateRef.current.push({
+            dispatch(updateGameState([...state.value, {
                 data: newData,
                 nextChess,
                 curRow: newRow,
                 curCol: newCol,
                 winner: newWinner,
-            });
+            }]));
         } else {
             // 悔棋后的新棋
-            stateRef.current = [
-                ...stateRef.current.slice(0, stepRef.current + 1),
+            dispatch(updateGameState([
+                ...state.value.slice(0, stepRef.current + 1),
                 {
                     data: newData,
                     nextChess,
@@ -110,7 +105,7 @@ const Board = () => {
                     curCol: newCol,
                     winner: newWinner,
                 },
-            ];
+            ]));
         }
         stepRef.current++;
         setChess(nextChess);
@@ -133,8 +128,8 @@ const Board = () => {
      */
     const goback = (event: MouseEvent<HTMLButtonElement>, index: number) => {
         stepRef.current = index;
-        setChess(stateRef.current[index].nextChess);
-        setWinner(stateRef.current[index].winner);
+        setChess(state.value[index].nextChess);
+        setWinner(state.value[index].winner);
     };
     return (
         <div className={styles.wrapper}>
@@ -183,8 +178,8 @@ const Board = () => {
                         {winner && <p>胜利者：{winner}</p>}
                     </div>
                     <div className={styles.backoffList}>
-                        {stateRef.current?.length > 0 &&
-                            stateRef.current.map((item, index) => (
+                        {state.value.length > 0 &&
+                            state.value.map((item, index) => (
                                 <button
                                     onClick={(event) => goback(event, index)}
                                     key={index}
@@ -203,8 +198,8 @@ const Board = () => {
                         gridTemplateRows: `repeat(${row}, 1fr)`,
                     }}
                 >
-                    {stateRef.current[stepRef.current] &&
-                        stateRef.current[stepRef.current].data.map((line, rowIndex) =>
+                    {state.value[stepRef.current] &&
+                        state.value[stepRef.current].data.map((line, rowIndex) =>
                             line.map((item, columnIndex) => (
                                 <Square
                                     key={columnIndex}
