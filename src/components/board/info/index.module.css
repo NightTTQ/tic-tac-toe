@@ -1,0 +1,17 @@
+.infoWrapper {
+    display: flex;
+    flex-direction: column;
+    min-width: 16rem;
+    align-items: center;
+    order: 2;
+}
+.textArea {
+    font-weight: bold;
+}
+.backoffList {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+}

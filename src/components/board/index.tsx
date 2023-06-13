@@ -1,8 +1,10 @@
-import React, { createRef, MouseEvent } from 'react';
+import { Component, MouseEvent } from 'react';
 import { connect } from 'react-redux';
 
 import { type GameState, mapState, mapDispatch } from './stateStore';
-import Square from './square';
+import Settings from './settings';
+import Info from './info';
+import Panel from './panel';
 import styles from './index.module.css';
 import handlers from './handlers';
 
@@ -22,7 +24,7 @@ export type State = {
 /**
  * @desc 游戏模块
  */
-class Board extends React.Component<Props, State> {
+class Board extends Component<Props, State> {
     constructor (props: Props) {
         super(props);
         this.state = {
@@ -34,27 +36,14 @@ class Board extends React.Component<Props, State> {
             chess: '',
         };
     }
-    rowRef = createRef<HTMLInputElement>();
-    columnRef = createRef<HTMLInputElement>();
-    modeRef = createRef<HTMLSelectElement>();
 
     /**
      * @desc 初始化游戏
+     * @param column 列数
+     * @param row 行数
+     * @param modeIndex 游戏模式
      */
-    init = () => {
-        const column = Number(this.columnRef.current?.value);
-        const row = Number(this.rowRef.current?.value);
-        const modeIndex = Number(this.modeRef.current?.value);
-        if (
-            isNaN(column) ||
-            isNaN(row) ||
-            column <= 0 ||
-            row <= 0 ||
-            !handlers[modeIndex]
-        ) {
-            alert('游戏配置错误');
-            return;
-        }
+    init = (column: number, row: number, modeIndex: number) => {
         this.setState({
             mode: modeIndex,
             column,
@@ -162,94 +151,30 @@ class Board extends React.Component<Props, State> {
 
     render () {
         const { gameState } = this.props;
-        const { column, row, mode, winner, chess, step } = this.state;
+        const { column, row, winner, chess, step } = this.state;
 
         return (
             <div className={styles.wrapper}>
-                <div className={styles.settingWrapper}>
-                    <div>
-                        <label htmlFor="row">行数</label>
-                        <input
-                            type="number"
-                            id="row"
-                            defaultValue={row}
-                            min={1}
-                            ref={this.rowRef}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="column">列数</label>
-                        <input
-                            type="number"
-                            id="column"
-                            defaultValue={column}
-                            min={1}
-                            ref={this.columnRef}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="mode">游戏模式</label>
-                        <select
-                            name="mode"
-                            id="mode"
-                            defaultValue={mode}
-                            ref={this.modeRef}
-                        >
-                            {handlers.map((item, index) => (
-                                <option
-                                    key={index}
-                                    value={index}
-                                >
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <button onClick={this.init}>开始</button>
-                </div>
+                <Settings
+                    init={this.init}
+                    defaultRow={3}
+                    defaultColumn={3}
+                    defaultMode={0}
+                />
                 <div className={styles.playgroundWrapper}>
-                    <div className={styles.infoWrapper}>
-                        <div className={styles.textArea}>
-                            {chess && !winner && <p>执棋者：{chess}</p>}
-                            {winner && <p>胜利者：{winner}</p>}
-                        </div>
-                        <div className={styles.backoffList}>
-                            {gameState.length > 0 &&
-                                gameState.map((item, index) => (
-                                    <button
-                                        onClick={(event) =>
-                                            this.goback(event, index)
-                                        }
-                                        key={index}
-                                    >
-                                        {index === 0
-                                            ? '悔棋至开局'
-                                            : `悔棋至第${index}步`}
-                                    </button>
-                                ))}
-                        </div>
-                    </div>
-                    <div
-                        className={styles.panel}
-                        style={{
-                            gridTemplateColumns: `repeat(${column}, 1fr)`,
-                            gridTemplateRows: `repeat(${row}, 1fr)`,
-                        }}
-                    >
-                        {gameState[step] &&
-                            gameState[step].data.map((line, rowIndex) =>
-                                line.map((item, columnIndex) => (
-                                    <Square
-                                        key={columnIndex}
-                                        row={rowIndex}
-                                        column={columnIndex}
-                                        content={item}
-                                        onClick={(event, row, column) =>
-                                            this.handleClick(row, column)
-                                        }
-                                    />
-                                )))}
-                    </div>
+                    <Info
+                        winner={winner}
+                        chess={chess}
+                        goback={this.goback}
+                        gameState={gameState}
+                        updateGameState={this.props.updateGameState}
+                    />
+                    <Panel
+                        column={column}
+                        row={row}
+                        onClick={this.handleClick}
+                        gameState={gameState[step]}
+                    />
                 </div>
             </div>
         );
