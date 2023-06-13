@@ -1,4 +1,4 @@
-import { PureComponent, MouseEvent } from 'react';
+import { PureComponent, MouseEvent, memo } from 'react';
 
 import styles from './index.module.css';
 
@@ -42,4 +42,10 @@ class Square extends PureComponent<Props> {
     }
 }
 
-export default Square;
+export default memo(Square, (prevProps, nextProps) => {
+    return (
+        prevProps.content === nextProps.content &&
+        prevProps.row === nextProps.row &&
+        prevProps.column === nextProps.column
+    );
+});
