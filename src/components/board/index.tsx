@@ -6,6 +6,7 @@ import Settings from './settings';
 import Info from './info';
 import Panel from './panel';
 import styles from './index.module.css';
+import { aiGo } from './ai';
 import handlers from './handlers';
 
 export type Props = {
@@ -19,6 +20,7 @@ export type State = {
     winner?: string;
     step: number;
     chess: string;
+    withAI: boolean;
 };
 
 /**
@@ -31,9 +33,9 @@ class Board extends Component<Props, State> {
             column: 3,
             row: 3,
             mode: 0,
-            winner: undefined,
             step: 0,
             chess: '',
+            withAI: false,
         };
     }
 
@@ -42,36 +44,57 @@ class Board extends Component<Props, State> {
      * @param column 列数
      * @param row 行数
      * @param modeIndex 游戏模式
+     * @param withAI 是否开启AI
+     * @param isAiFrist AI是否先手
      */
-    init = (column: number, row: number, modeIndex: number) => {
-        this.setState({
-            mode: modeIndex,
-            column,
-            row,
-            winner: undefined,
-        });
+    init = (
+        column: number,
+        row: number,
+        modeIndex: number,
+        withAI: boolean,
+        isAiFrist?: boolean
+    ) => {
+        // 初始化棋盘并记录状态
         const data: string[][] = new Array(row)
             .fill(0)
             .map(() => new Array(column).fill(''));
         const { nextChess } = handlers[modeIndex].init();
         this.props.updateGameState([{ data, nextChess }]);
-        this.setState((prevState) => {
-            return {
-                column: prevState.column,
-                row: prevState.row,
-                mode: prevState.mode,
-                winner: prevState.winner,
+        this.setState(
+            {
+                column,
+                row,
+                mode: modeIndex,
+                winner: undefined,
                 step: 0,
                 chess: nextChess,
-            };
-        });
+                withAI,
+            },
+            () => {
+                if (withAI && isAiFrist) {
+                    const data = this.props.gameState[0].data.map((line) =>
+                        line.map((item) => item));
+                    // 开启AI且AI先手，由AI下第一颗棋
+                    const { newRow, newCol } = aiGo(
+                        data,
+                        nextChess,
+                        handlers[modeIndex].chessSet[1],
+                        column,
+                        row,
+                        0
+                    );
+                    this.handleClick(newRow, newCol, true);
+                }
+            }
+        );
     };
     /**
-     * @desc 处理点击事件
+     * @desc 处理下棋事件
      * @param newRow 新棋子所在行
      * @param newCol 新棋子所在列
+     * @param isAi 这一步是否是AI下的
      */
-    handleClick = (newRow: number, newCol: number) => {
+    handleClick = (newRow: number, newCol: number, isAi: boolean) => {
         const { data } = this.props.gameState[this.state.step];
         if (this.state.winner) return;
         // 点击已经有棋的格子不处理
@@ -121,16 +144,35 @@ class Board extends Component<Props, State> {
                 },
             ]);
         }
-        this.setState((prevState) => {
-            return {
-                column: prevState.column,
-                row: prevState.row,
-                mode: prevState.mode,
-                winner: newWinner,
-                step: prevState.step + 1,
-                chess: nextChess,
-            };
-        });
+        this.setState(
+            (prevState) => {
+                return {
+                    column: prevState.column,
+                    row: prevState.row,
+                    mode: prevState.mode,
+                    winner: newWinner,
+                    step: prevState.step + 1,
+                    chess: nextChess,
+                    withAI: prevState.withAI,
+                };
+            },
+            (): void => {
+                if (this.state.withAI && !isAi) {
+                    const data = this.props.gameState[this.state.step].data.map((line) => line.map((item) => item));
+                    // 已开启AI，并且刚刚下的一步是玩家下的，调用AI获取最优解
+                    const { newRow, newCol } = aiGo(
+                        data,
+                        nextChess,
+                        handlers[this.state.mode].chessSet.filter((item) => item !== nextChess)[0],
+                        this.state.column,
+                        this.state.row,
+                        this.state.step
+                    );
+                    // AI落子
+                    this.handleClick(newRow, newCol, true);
+                }
+            }
+        );
     };
 
     /**
@@ -145,6 +187,7 @@ class Board extends Component<Props, State> {
                 winner: this.props.gameState[index].winner,
                 step: index,
                 chess: this.props.gameState[index].nextChess,
+                withAI: prevState.withAI,
             };
         });
     };
@@ -172,7 +215,9 @@ class Board extends Component<Props, State> {
                     <Panel
                         column={column}
                         row={row}
-                        onClick={this.handleClick}
+                        onClick={(row, column) =>
+                            this.handleClick(row, column, false)
+                        }
                         gameState={gameState[step]}
                     />
                 </div>

@@ -7,7 +7,13 @@ export type Props = {
     defaultColumn: number;
     defaultRow: number;
     defaultMode: number;
-    init: (column: number, row: number, modeIndex: number) => void;
+    init: (
+        column: number,
+        row: number,
+        modeIndex: number,
+        withAI: boolean,
+        isAiFrist?: boolean
+    ) => void;
 };
 export type State = {};
 
@@ -20,7 +26,7 @@ class Settings extends Component<Props, State> {
     columnRef = createRef<HTMLInputElement>();
     modeRef = createRef<HTMLSelectElement>();
 
-    init = () => {
+    init = (withAI: boolean, isAiFrist?: boolean) => {
         const row = Number(this.rowRef.current?.value);
         const column = Number(this.columnRef.current?.value);
         const modeIndex = Number(this.modeRef.current?.value);
@@ -34,7 +40,8 @@ class Settings extends Component<Props, State> {
             alert('游戏配置错误');
             return;
         }
-        this.props.init(column, row, modeIndex);
+        if (withAI) this.props.init(3, 3, 0, withAI, isAiFrist);
+        else this.props.init(column, row, modeIndex, withAI);
     };
 
     render () {
@@ -78,7 +85,13 @@ class Settings extends Component<Props, State> {
                         ))}
                     </select>
                 </div>
-                <button onClick={this.init}>开始</button>
+                <button onClick={() => this.init(false)}>开始</button>
+                <button onClick={() => this.init(true, true)}>
+                    AI先手模式
+                </button>
+                <button onClick={() => this.init(true, false)}>
+                    AI后手模式
+                </button>
             </div>
         );
     }

@@ -82,18 +82,21 @@ const handlers: {
         setp: number
     ) => { nextChess: string, newWinner?: string };
     init: () => { nextChess: string };
+    chessSet: string[];
 }[] = [
     {
         // 三连子游戏
         name: 'tictactoe',
         handler: universalHandler(3, 'X', 'O'),
         init: () => ({ nextChess: 'X' }),
+        chessSet: ['X', 'O'],
     },
     {
         // 五子棋游戏
         name: 'gomoku',
         handler: universalHandler(5, '⚫', '⚪'),
         init: () => ({ nextChess: '⚫' }),
+        chessSet: ['⚫', '⚪'],
     },
 ];
 
