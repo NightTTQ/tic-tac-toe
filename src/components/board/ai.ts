@@ -71,7 +71,9 @@ const minmax = (
     newCol: number,
     step: number,
     isMax: boolean,
-    depth: number
+    depth: number,
+    alpha: number,
+    beta: number
 ): number => {
     // 先计算当前步数的评价值
     const score = evaluate(
@@ -110,10 +112,15 @@ const minmax = (
                             xIndex,
                             step + 1,
                             !isMax,
-                            depth >= 0 ? depth - 1 : -1
+                            depth >= 0 ? depth - 1 : -1,
+                            alpha,
+                            beta
                         )
                     );
                     data[yIndex][xIndex] = '';
+                    // alpha剪枝
+                    alpha = Math.max(alpha, maxScore);
+                    if (beta <= alpha) break;
                 }
             }
         }
@@ -140,10 +147,15 @@ const minmax = (
                         xIndex,
                         step + 1,
                         !isMax,
-                        depth >= 0 ? depth - 1 : -1
+                        depth >= 0 ? depth - 1 : -1,
+                        alpha,
+                        beta
                     )
                 );
                 data[yIndex][xIndex] = '';
+                // beta剪枝
+                beta = Math.min(beta, minScore);
+                if (beta <= alpha) break;
             }
         }
     }
@@ -187,7 +199,9 @@ const aiGo = (
                     xIndex,
                     step + 1,
                     false,
-                    -1
+                    -1,
+                    -Infinity,
+                    Infinity
                 );
                 if (score > maxScore) {
                     maxScore = score;
