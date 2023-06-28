@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 
 import styles from './App.module.css';
@@ -22,7 +23,9 @@ function App () {
                     TicTacToe
                 </NavLink>
             </nav>
-            <Outlet />
+            <Suspense fallback={<div>Loading</div>}>
+                <Outlet />
+            </Suspense>
         </div>
     );
 }
